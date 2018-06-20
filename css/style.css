@@ -1,0 +1,70 @@
+body{
+    font-family: 'Roboto Mono', monospace;
+    position: relative;
+}
+
+.mb10{
+	margin-bottom: 10px;
+}
+.mt10{
+	margin-top: 10px;
+}
+.mb30{
+	margin-bottom: 30px;
+}
+.mt30{
+	margin-top: 30px;
+}
+
+.card--game-info{
+	max-width: 360px;
+
+	-webkit-box-shadow: 0px 0px 10px 4px rgba(0,0,0,0.12);
+	-moz-box-shadow: 0px 0px 10px 4px rgba(0,0,0,0.12);
+	box-shadow: 0px 0px 10px 4px rgba(0,0,0,0.12);
+
+	position: fixed;
+	bottom: 0px;
+	right: 50px;
+}
+
+	.card--game-info .card-title{
+		font-size: 17px;
+	}
+
+	.card--game-info img.card--game-info__avatar{
+		padding: 10px 0 10px 0;
+		max-height: 300px;
+		margin: 0 auto;
+		margin-top: -20px;
+	}
+
+	.card--game-info__name{
+		font-size: 17px;
+	}
+
+	.card--game-info__stats__{
+
+	}
+
+		.card--game-info__stats__title{
+			font-size: 12px;
+			text-align: center;
+		}
+
+		.card--game-info__stats__title__days{
+			position: relative;
+			margin-left: -30px;
+		}
+
+		.card--game-info__stats__title__days__title{
+			font-size: 12px;
+			position: absolute;
+			top: 17px;
+		}
+
+		img.card--game-info__stats__flag{
+			max-height: 64px;
+			/* margin-top: 15px; */
+			/* margin-bottom: 12px; */
+		}
