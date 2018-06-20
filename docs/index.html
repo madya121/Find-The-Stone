@@ -1,0 +1,401 @@
+<!doctype html>
+
+<html lang="en">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.4/socket.io.js" type="text/javascript"></script>
+	<head>
+		<!-- Required meta tags -->
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+		<!-- fonts -->
+		<link href="https://fonts.googleapis.com/css?family=Roboto+Mono:400,400i,700,700i" rel="stylesheet">
+
+		<!-- Bootstrap CSS -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+		<!-- CSS -->
+		<link rel="stylesheet" href="css/style.css">
+
+    <link rel="shortcut icon" id="icon-html" type="image/png" href="Images/Stone/time.png"/>
+		<title id="title-html">Find The Stones</title>
+
+    <style>
+      #map {
+        height: 100%;
+        width: 100%;
+       }
+
+      html, body {
+        height: 100%;
+        margin: 0;
+      }
+    </style>
+
+    <style>
+    /* TODO move to the proper file */
+    /* The snackbar - position it at the bottom and in the middle of the screen */
+    #snackbar {
+        visibility: hidden; /* Hidden by default. Visible on click */
+        min-width: 250px; /* Set a default minimum width */
+        margin-left: 30px; /* Divide value of min-width by 2 */
+        top: 30px; /* Divide value of min-width by 2 */
+        background-color: #333; /* Black background color */
+        color: #fff; /* White text color */
+        text-align: center; /* Centered text */
+        border-radius: 2px; /* Rounded borders */
+        padding: 16px; /* Padding */
+        position: fixed; /* Sit on top of the screen */
+        z-index: 1; /* Add a z-index if needed */
+        /* left: 50%; /* Center the snackbar
+        bottom: 30px; /* 30px from the bottom */
+    }
+
+    /* Show the snackbar when clicking on a button (class added with JavaScript) */
+    #snackbar.show {
+        visibility: visible; /* Show the snackbar */
+
+    /* Add animation: Take 0.5 seconds to fade in and out the snackbar.
+    However, delay the fade out process for 2.5 seconds */
+        -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        animation: fadein 0.5s, fadeout 0.5s 2.5s;
+    }
+
+    /* Animations to fade the snackbar in and out */
+    @-webkit-keyframes fadein {
+        from {top: 0; opacity: 0;}
+        to {top: 30px; opacity: 1;}
+    }
+
+    @keyframes fadein {
+        from {top: 0; opacity: 0;}
+        to {top: 30px; opacity: 1;}
+    }
+
+    @-webkit-keyframes fadeout {
+        from {top: 30px; opacity: 1;}
+        to {top: 0; opacity: 0;}
+    }
+
+    @keyframes fadeout {
+        from {top: 30px; opacity: 1;}
+        to {top: 0; opacity: 0;}
+    }
+    </style>
+	</head>
+
+	<body>
+    <div id="snackbar"></div>
+    <div id="map"></div>
+		<div class="card text-center card--game-info">
+			<!-- Heading -->
+			<div class="card-body">
+				<p class="card-title text-muted">Missing:</p>
+			</div>
+			<!-- Image -->
+			<img src="" id="stone-image" class="img-fluid card--game-info__avatar">
+			<!-- Text Content -->
+			<div class="card-body">
+				<h3 class="card--game-info__name" id="stone-name">Stone</h3>
+				<div class="row mt30">
+					<div class="col card--game-info__stats">
+						<p class="text-muted card--game-info__stats__title">Last Seen In:</p>
+						<img id="current-nation-flag" src="" alt="" class="card--game-info__stats__flag">
+						<br>
+						<p id="current-nation">---</p>
+					</div>
+					<div class="col card--game-info__stats">
+						<p class="text-muted card--game-info__stats__title">Active Searcher:</p>
+						<h1 id="connected-user">3</h1>
+						<p>Online</p>
+					</div>
+					<div class="col card--game-info__stats">
+						<p class="text-muted card--game-info__stats__title">Time Missing:</p>
+						<h1 class="card--game-info__stats__title__days">3 <span class="card--game-info__stats__title__days__title">Days</span></h1>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Optional JavaScript -->
+    <script>
+      var socket  = io('http://localhost:3460');
+
+      var map = null;
+      var marker = null;
+
+      var zoom_limit = 12;
+
+      socket.on('connected_user', (count) => {
+        console.log(count);
+        document.getElementById("connected-user").innerHTML = count;
+      });
+
+      socket.on("found_it", (data) => {
+        console.log(data);
+        if (marker !== null) {
+          marker.setMap(null);
+          marker = null;
+        }
+        showSnackBar(data);
+      });
+
+      function showSnackBar(data) {
+        var x = document.getElementById("snackbar")
+        x.innerHTML = data.l.s.n + " Was Found In: " + data.p;
+        x.className = "show";
+        setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
+      }
+
+      socket.on('answer', (answer) => {
+        if (answer === {}) {
+          document.getElementById("current-nation").innerHTML = '-';
+          document.getElementById("current-nation-flag").src = '';
+
+          if (marker !== null) {
+            marker.setMap(null);
+            marker = null;
+          }
+
+          return;
+        }
+        console.log(answer);
+
+        document.getElementById("current-nation").innerHTML = answer.c;
+        document.getElementById("current-nation-flag").src = 'http://www.countryflags.io/'+answer.cs+'/flat/64.png';
+        document.getElementById("stone-image").src = 'Images/Stone/' + answer.s.i;
+        document.getElementById("stone-name").innerText = answer.s.n;
+        document.getElementById("icon-html").href = 'Images/Stone/' + answer.s.i;
+        document.getElementById("title-html").innerText = 'Find The ' + answer.s.n;
+
+        if (map === null)
+          return;
+
+        if (marker !== null) {
+          marker.setMap(null);
+        }
+
+        if (map.getZoom() < zoom_limit)
+          return;
+
+        var myLatlng = new google.maps.LatLng(answer.p.lat, answer.p.lng);
+        var icon = {
+            url: "Images/Stone/" + answer.s.i, // url
+            scaledSize: new google.maps.Size(50, 50), // scaled size
+            origin: new google.maps.Point(0,0), // origin
+            anchor: new google.maps.Point(0, 0) // anchor
+        };
+        marker = new google.maps.Marker({
+            position: myLatlng,
+            title: answer.s.n,
+            icon: icon
+        });
+        marker.setMap(map);
+        marker.addListener('click', function() {
+          socket.emit('found_it', {});
+
+          marker.setMap(null);
+          marker = null;
+        });
+      });
+
+      function initMap() {
+        var center = {lat: 0, lng: 0};
+        map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 3,
+          center: center,
+          streetViewControl: false,
+          mapTypeControl: false,
+          fullscreenControl: false,
+          styles: [
+            {
+                "featureType": "all",
+                "elementType": "geometry.fill",
+                "stylers": [
+                    {
+                        "weight": "2.00"
+                    }
+                ]
+            },
+            {
+                "featureType": "all",
+                "elementType": "geometry.stroke",
+                "stylers": [
+                    {
+                        "color": "#9c9c9c"
+                    }
+                ]
+            },
+            {
+                "featureType": "all",
+                "elementType": "labels.text",
+                "stylers": [
+                    {
+                        "visibility": "on"
+                    }
+                ]
+            },
+            {
+                "featureType": "landscape",
+                "elementType": "all",
+                "stylers": [
+                    {
+                        "color": "#f2f2f2"
+                    }
+                ]
+            },
+            {
+                "featureType": "landscape",
+                "elementType": "geometry.fill",
+                "stylers": [
+                    {
+                        "color": "#ffffff"
+                    }
+                ]
+            },
+            {
+                "featureType": "landscape.man_made",
+                "elementType": "geometry.fill",
+                "stylers": [
+                    {
+                        "color": "#ffffff"
+                    }
+                ]
+            },
+            {
+                "featureType": "poi",
+                "elementType": "all",
+                "stylers": [
+                    {
+                        "visibility": "off"
+                    }
+                ]
+            },
+            {
+                "featureType": "road",
+                "elementType": "all",
+                "stylers": [
+                    {
+                        "saturation": -100
+                    },
+                    {
+                        "lightness": 45
+                    }
+                ]
+            },
+            {
+                "featureType": "road",
+                "elementType": "geometry.fill",
+                "stylers": [
+                    {
+                        "color": "#eeeeee"
+                    }
+                ]
+            },
+            {
+                "featureType": "road",
+                "elementType": "labels.text.fill",
+                "stylers": [
+                    {
+                        "color": "#7b7b7b"
+                    }
+                ]
+            },
+            {
+                "featureType": "road",
+                "elementType": "labels.text.stroke",
+                "stylers": [
+                    {
+                        "color": "#ffffff"
+                    }
+                ]
+            },
+            {
+                "featureType": "road.highway",
+                "elementType": "all",
+                "stylers": [
+                    {
+                        "visibility": "simplified"
+                    }
+                ]
+            },
+            {
+                "featureType": "road.arterial",
+                "elementType": "labels.icon",
+                "stylers": [
+                    {
+                        "visibility": "off"
+                    }
+                ]
+            },
+            {
+                "featureType": "transit",
+                "elementType": "all",
+                "stylers": [
+                    {
+                        "visibility": "off"
+                    }
+                ]
+            },
+            {
+                "featureType": "water",
+                "elementType": "all",
+                "stylers": [
+                    {
+                        "color": "#46bcec"
+                    },
+                    {
+                        "visibility": "on"
+                    }
+                ]
+            },
+            {
+                "featureType": "water",
+                "elementType": "geometry.fill",
+                "stylers": [
+                    {
+                        "color": "#c8d7d4"
+                    }
+                ]
+            },
+            {
+                "featureType": "water",
+                "elementType": "labels.text.fill",
+                "stylers": [
+                    {
+                        "color": "#070707"
+                    }
+                ]
+            },
+            {
+                "featureType": "water",
+                "elementType": "labels.text.stroke",
+                "stylers": [
+                    {
+                        "color": "#ffffff"
+                    }
+                ]
+            }
+        ]
+        });
+
+        map.addListener('zoom_changed', function() {
+          console.log(map.getZoom());
+          if (map.getZoom() >= zoom_limit) {
+            socket.emit('request answer', {});
+          } else {
+            if (marker !== null) {
+              marker.setMap(null);
+              marker = null;
+            }
+          }
+        });
+      }
+    </script>
+
+		<!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB0qlGcwnOYAb7YqgOoUmb02SXwpLYeJJ8&callback=initMap"></script>
+		<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-growl/1.0.0/jquery.bootstrap-growl.min.js"></script>
+	</body>
+</html>
